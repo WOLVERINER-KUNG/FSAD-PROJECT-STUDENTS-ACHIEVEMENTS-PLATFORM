@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Student Dashboard - Achievements Portal</title>
+    <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <h2>🎓 Student Dashboard</h2>
+            <div class="nav-links">
+                <a href="#" onclick="loadMyAchievements(); return false;">My Achievements</a>
+                <a href="#" onclick="showAddForm(); return false;">Add Achievement</a>
+                <span id="userGreeting"></span>
+                <button onclick="logout()" class="btn btn-danger">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Add Achievement Form -->
+        <div id="addAchievementSection" class="section">
+            <h2>➕ Add New Achievement</h2>
+            <form id="addAchievementForm" onsubmit="handleAddAchievement(event)">
+                <div class="form-group">
+                    <label for="title">Achievement Title</label>
+                    <input type="text" id="title" name="title" placeholder="e.g., Winner of Hackathon 2025" required />
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <textarea id="description" name="description" placeholder="Describe your achievement..." rows="4" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="type">Achievement Type</label>
+                    <select id="type" name="type" required>
+                        <option value="">Select Type</option>
+                        <option value="event">Event</option>
+                        <option value="award">Award</option>
+                        <option value="recognition">Recognition</option>
+                        <option value="participation">Participation</option>
+                        <option value="competition">Competition</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="level">Level</label>
+                    <select id="level" name="level" required>
+                        <option value="">Select Level</option>
+                        <option value="college">College</option>
+                        <option value="state">State</option>
+                        <option value="national">National</option>
+                        <option value="international">International</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="position">Position/Role</label>
+                    <select id="position" name="position" required>
+                        <option value="participant">Participant</option>
+                        <option value="winner">Winner</option>
+                        <option value="runner-up">Runner-up</option>
+                        <option value="organizer">Organizer</option>
+                        <option value="speaker">Speaker</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="organizer">Organizer/Event Name</label>
+                    <input type="text" id="organizer" name="organizer" placeholder="e.g., ACM, IEEE, College Administration" required />
+                </div>
+
+                <div class="form-group">
+                    <label for="date">Date of Achievement</label>
+                    <input type="date" id="date" name="date" required />
+                </div>
+
+                <div class="form-group">
+                    <label for="proof">Upload Proof/Certificate</label>
+                    <input type="file" id="proof" name="proof" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
+                    <small>Accepted formats: PDF, JPG, PNG, DOC (Max 5MB)</small>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Submit Achievement</button>
+            </form>
+        </div>
+
+        <!-- My Achievements Section -->
+        <div id="achievementsSection" class="section">
+            <h2>🏆 My Achievements</h2>
+            <div id="achievementsList">
+                <p>Loading your achievements...</p>
+            </div>
+        </div>
+
+        <div id="message" class="message"></div>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script>
+        window.addEventListener('load', () => {
+            checkAuth('student');
+            const user = getUser();
+            document.getElementById('userGreeting').textContent = `Welcome, ${user.fullName}!`;
+            loadMyAchievements();
+        });
+
+        async function handleAddAchievement(event) {
+            event.preventDefault();
+
+            const formData = new FormData();
+            formData.append('title', document.getElementById('title').value);
+            formData.append('description', document.getElementById('description').value);
+            formData.append('type', document.getElementById('type').value);
+            formData.append('level', document.getElementById('level').value);
+            formData.append('position', document.getElementById('position').value);
+            formData.append('organizer', document.getElementById('organizer').value);
+            formData.append('date', document.getElementById('date').value);
+
+            const proofFile = document.getElementById('proof').files[0];
+            if (proofFile) {
+                formData.append('proof', proofFile);
+            }
+
+            await submitAchievement(formData);
+        }
+    </script>
+</body>
+</html>

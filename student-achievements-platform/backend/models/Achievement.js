@@ -1,41 +1,76 @@
 const mongoose = require('mongoose');
 
 const achievementSchema = new mongoose.Schema({
-  student: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'User', 
-    required: true 
+  student: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
   },
-  title: { 
-    type: String, 
+  title: {
+    type: String,
     required: true,
-    trim: true 
+    trim: true
   },
-  category: { 
-    type: String, 
-    enum: ['sports', 'cultural', 'technical', 'other'],
-    required: true 
+  description: {
+    type: String,
+    required: true
   },
-  description: { 
-    type: String, 
-    required: true 
+  type: {
+    type: String,
+    enum: ['event', 'award', 'recognition', 'participation', 'competition'],
+    required: true
   },
-  date: { 
-    type: Date, 
-    required: true 
+  level: {
+    type: String,
+    enum: ['college', 'state', 'national', 'international'],
+    required: true
   },
-  proofFile: { 
-    type: String,           // filename
-    default: null 
+  position: {
+    type: String,
+    enum: ['winner', 'runner-up', 'participant', 'organizer', 'speaker'],
+    default: 'participant'
   },
-  status: { 
-    type: String, 
+  organizer: {
+    type: String,
+    required: true
+  },
+  date: {
+    type: Date,
+    required: true
+  },
+  proofFile: {
+    type: String,
+    sparse: true
+  },
+  certificate: {
+    type: String,
+    sparse: true
+  },
+  status: {
+    type: String,
     enum: ['pending', 'approved', 'rejected'],
-    default: 'pending' 
+    default: 'pending'
   },
-  createdAt: { 
-    type: Date, 
-    default: Date.now 
+  approvedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    sparse: true
+  },
+  approvedAt: {
+    type: Date,
+    sparse: true
+  },
+  remarks: {
+    type: String,
+    sparse: true
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
   }
 });
 
