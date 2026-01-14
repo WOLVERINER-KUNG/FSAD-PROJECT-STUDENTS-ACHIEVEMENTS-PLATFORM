@@ -1,113 +1,61 @@
 const express = require('express');
 const router = express.Router();
-const Achievement = require('../models/Achievement');
-const User = require('../models/User');
 const protect = require('../middleware/auth');
 const roleCheck = require('../middleware/roleCheck');
+const { getAsync, allAsync, runAsync } = require('../config/database');
 
-// Apply auth and admin check to all routes
 router.use(protect, roleCheck(['admin']));
 
-// GET all students
 router.get('/students', async (req, res) => {
   try {
-    const students = await User.find({ role: 'student' })
-      .select('-password')
-      .sort({ createdAt: -1 });
-    
-    res.json(students);
+    const students = allAsync('SELECT id, username, email, fullName, registrationNumber, department, year, phone FROM users WHERE role = ?', ['student']);
+    res.json(students || []);
   } catch (err) {
-    res.status(500).json({ message: 'Error fetching students', error: err.message });
+    res.status(500).json({ message: 'Error', error: err.message });
   }
 });
 
-// GET specific student with achievements
-router.get('/students/:id', async (req, res) => {
-  try {
-    const student = await User.findById(req.params.id).select('-password');
-    if (!student) return res.status(404).json({ message: 'Student not found' });
-
-    const achievements = await Achievement.find({ student: req.params.id })
-      .populate('student', 'fullName email registrationNumber');
-
-    res.json({ student, achievements });
-  } catch (err) {
-    res.status(500).json({ message: 'Error fetching student', error: err.message });
-  }
-});
-
-// GET all achievements (pending review)
 router.get('/achievements', async (req, res) => {
   try {
     const { status } = req.query;
-    const filter = status ? { status } : {};
-
-    const achievements = await Achievement.find(filter)
-      .populate('student', 'fullName email registrationNumber')
-      .sort({ createdAt: -1 });
-
-    res.json(achievements);
+    const sql = status ? 'SELECT * FROM achievements WHERE status = ?' : 'SELECT * FROM achievements';
+    const params = status ? [status] : [];
+    const achievements = allAsync(sql, params);
+    res.json(achievements || []);
   } catch (err) {
-    res.status(500).json({ message: 'Error fetching achievements', error: err.message });
+    res.status(500).json({ message: 'Error', error: err.message });
   }
 });
 
-// APPROVE or REJECT achievement
 router.put('/achievements/:id/review', async (req, res) => {
   try {
     const { status, remarks } = req.body;
-
     if (!['approved', 'rejected'].includes(status)) {
       return res.status(400).json({ message: 'Invalid status' });
     }
-
-    const achievement = await Achievement.findByIdAndUpdate(
-      req.params.id,
-      {
-        status,
-        remarks,
-        approvedBy: req.user._id,
-        approvedAt: new Date()
-      },
-      { new: true }
-    );
-
-    if (!achievement) return res.status(404).json({ message: 'Achievement not found' });
-
-    res.json({ message: `Achievement ${status}`, achievement });
+    runAsync('UPDATE achievements SET status = ?, remarks = ?, approvedBy = ? WHERE id = ?',
+      [status, remarks || null, req.user.id, req.params.id]);
+    res.json({ message: `Achievement ${status}` });
   } catch (err) {
-    res.status(500).json({ message: 'Error reviewing achievement', error: err.message });
+    res.status(500).json({ message: 'Error', error: err.message });
   }
 });
 
-// DELETE achievement
-router.delete('/achievements/:id', async (req, res) => {
-  try {
-    const achievement = await Achievement.findByIdAndDelete(req.params.id);
-    if (!achievement) return res.status(404).json({ message: 'Achievement not found' });
-
-    res.json({ message: 'Achievement deleted', achievement });
-  } catch (err) {
-    res.status(500).json({ message: 'Error deleting achievement', error: err.message });
-  }
-});
-
-// GET dashboard statistics
 router.get('/dashboard/stats', async (req, res) => {
   try {
-    const totalStudents = await User.countDocuments({ role: 'student' });
-    const totalAchievements = await Achievement.countDocuments();
-    const pendingApprovals = await Achievement.countDocuments({ status: 'pending' });
-    const approvedAchievements = await Achievement.countDocuments({ status: 'approved' });
+    const totalStudents = getAsync('SELECT COUNT(*) as count FROM users WHERE role = ?', ['student']);
+    const totalAchievements = getAsync('SELECT COUNT(*) as count FROM achievements');
+    const pendingApprovals = getAsync('SELECT COUNT(*) as count FROM achievements WHERE status = ?', ['pending']);
+    const approvedAchievements = getAsync('SELECT COUNT(*) as count FROM achievements WHERE status = ?', ['approved']);
 
     res.json({
-      totalStudents,
-      totalAchievements,
-      pendingApprovals,
-      approvedAchievements
+      totalStudents: totalStudents?.count || 0,
+      totalAchievements: totalAchievements?.count || 0,
+      pendingApprovals: pendingApprovals?.count || 0,
+      approvedAchievements: approvedAchievements?.count || 0
     });
   } catch (err) {
-    res.status(500).json({ message: 'Error fetching stats', error: err.message });
+    res.status(500).json({ message: 'Error', error: err.message });
   }
 });
 

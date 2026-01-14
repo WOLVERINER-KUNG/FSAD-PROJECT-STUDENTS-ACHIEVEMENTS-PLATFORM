@@ -1,30 +1,22 @@
 const jwt = require('jsonwebtoken');
 
-const protect = async (req, res, next) => {
-  let token;
-
-  if (req.headers.authorization?.startsWith('Bearer')) {
-    try {
+const protect = (req, res, next) => {
+  try {
+    let token;
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
       token = req.headers.authorization.split(' ')[1];
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.user = { id: decoded.id, role: decoded.role };
-      next();
-    } catch (error) {
-      res.status(401).json({ message: 'Not authorized, token failed' });
     }
-  }
 
-  if (!token) {
-    res.status(401).json({ message: 'Not authorized, no token' });
-  }
-};
+    if (!token) {
+      return res.status(401).json({ message: 'Not authorized' });
+    }
 
-const adminOnly = (req, res, next) => {
-  if (req.user && req.user.role === 'admin') {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
+    req.user = decoded;
     next();
-  } else {
-    res.status(403).json({ message: 'Admin access required' });
+  } catch (err) {
+    return res.status(401).json({ message: 'Not authorized' });
   }
 };
 
-module.exports = { protect, adminOnly };
+module.exports = protect;
