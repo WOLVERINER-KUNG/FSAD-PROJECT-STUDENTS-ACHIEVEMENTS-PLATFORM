@@ -9,7 +9,8 @@
 <body>
     <div class="container login-container">
         <div class="login-box">
-            <h1>🎓 Student Achievements Platform</h1>
+            <div class="logo">🎓</div>
+            <h1>Student Achievements Platform</h1>
             <p class="subtitle">Track your academic success</p>
             
             <form id="loginForm" class="form">
@@ -26,12 +27,13 @@
                 <div class="form-group">
                     <label for="role">Login As</label>
                     <select id="role" name="role" required>
+                        <option value="">Select Role</option>
                         <option value="student">Student</option>
                         <option value="admin">Administrator</option>
                     </select>
                 </div>
                 
-                <button type="submit" class="btn btn-primary">Login</button>
+                <button type="submit" class="btn btn-primary btn-block">Login</button>
             </form>
             
             <div class="auth-links">
@@ -44,11 +46,17 @@
     
     <script src="script.js"></script>
     <script>
+        // Login form handler
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const role = document.getElementById('role').value;
+            
+            if (!role) {
+                showMessage('Please select a role', 'error');
+                return;
+            }
             
             try {
                 const response = await fetch('http://localhost:5000/api/auth/login', {
@@ -63,17 +71,21 @@
                     localStorage.setItem('token', data.token);
                     localStorage.setItem('role', role);
                     localStorage.setItem('userId', data.userId);
+                    localStorage.setItem('userName', data.name);
                     
-                    if (role === 'admin') {
-                        window.location.href = 'admin-dashboard.html';
-                    } else {
-                        window.location.href = 'student-dashboard.html';
-                    }
+                    showMessage('Login successful! Redirecting...', 'success');
+                    setTimeout(() => {
+                        if (role === 'admin') {
+                            window.location.href = 'admin-dashboard.html';
+                        } else {
+                            window.location.href = 'student-dashboard.html';
+                        }
+                    }, 1500);
                 } else {
-                    showMessage(data.message || 'Login failed', 'error');
+                    showMessage(data.message || 'Login failed. Please check your credentials.', 'error');
                 }
             } catch (error) {
-                showMessage('Connection error. Make sure backend is running.', 'error');
+                showMessage('Connection error. Make sure backend is running on http://localhost:5000', 'error');
             }
         });
         
@@ -82,7 +94,9 @@
             messageDiv.textContent = msg;
             messageDiv.className = 'message ' + type;
             messageDiv.style.display = 'block';
-            setTimeout(() => messageDiv.style.display = 'none', 5000);
+            if (type === 'error') {
+                setTimeout(() => messageDiv.style.display = 'none', 5000);
+            }
         }
     </script>
 </body>

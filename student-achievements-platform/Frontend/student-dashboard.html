@@ -1,132 +1,176 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Student Dashboard - Achievements Portal</title>
-    <link rel="stylesheet" href="css/style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard - Achievements</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <nav class="navbar">
-        <div class="nav-container">
-            <h2>🎓 Student Dashboard</h2>
-            <div class="nav-links">
-                <a href="#" onclick="loadMyAchievements(); return false;">My Achievements</a>
-                <a href="#" onclick="showAddForm(); return false;">Add Achievement</a>
-                <span id="userGreeting"></span>
-                <button onclick="logout()" class="btn btn-danger">Logout</button>
+    <div class="dashboard-container">
+        <header class="dashboard-header">
+            <div class="header-content">
+                <h1>🎓 Student Dashboard</h1>
+                <div class="header-right">
+                    <span class="user-name" id="userName"></span>
+                    <button class="btn btn-logout" onclick="logout()">Logout</button>
+                </div>
             </div>
+        </header>
+        
+        <div class="dashboard-content">
+            <aside class="sidebar">
+                <nav class="sidebar-menu">
+                    <a href="#" class="menu-item active" data-section="achievements">
+                        <span class="icon">⭐</span>
+                        <span>My Achievements</span>
+                    </a>
+                    <a href="#" class="menu-item" data-section="profile">
+                        <span class="icon">👤</span>
+                        <span>My Profile</span>
+                    </a>
+                    <a href="#" class="menu-item" data-section="requests">
+                        <span class="icon">📋</span>
+                        <span>My Requests</span>
+                    </a>
+                </nav>
+            </aside>
+            
+            <main class="main-content">
+                <!-- Achievements Section -->
+                <section id="achievements-section" class="content-section active">
+                    <div class="section-header">
+                        <h2>Your Achievements</h2>
+                        <button class="btn btn-primary" onclick="openRequestModal()">Request New Achievement</button>
+                    </div>
+                    <div id="achievementsList" class="achievements-grid">
+                        <p class="loading">Loading achievements...</p>
+                    </div>
+                </section>
+                
+                <!-- Profile Section -->
+                <section id="profile-section" class="content-section">
+                    <h2>My Profile</h2>
+                    <div class="profile-card" id="profileCard">
+                        <p class="loading">Loading profile...</p>
+                    </div>
+                </section>
+                
+                <!-- Requests Section -->
+                <section id="requests-section" class="content-section">
+                    <div class="section-header">
+                        <h2>Achievement Requests</h2>
+                        <button class="btn btn-primary" onclick="openRequestModal()">Request New Achievement</button>
+                    </div>
+                    <div id="requestsList" class="requests-list">
+                        <p class="loading">Loading requests...</p>
+                    </div>
+                </section>
+            </main>
         </div>
-    </nav>
-
-    <div class="container">
-        <!-- Add Achievement Form -->
-        <div id="addAchievementSection" class="section">
-            <h2>➕ Add New Achievement</h2>
-            <form id="addAchievementForm" onsubmit="handleAddAchievement(event)">
+    </div>
+    
+    <!-- Request Modal -->
+    <div id="requestModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Request New Achievement</h2>
+                <span class="close" onclick="closeRequestModal()">&times;</span>
+            </div>
+            <form id="requestForm" class="form">
                 <div class="form-group">
-                    <label for="title">Achievement Title</label>
-                    <input type="text" id="title" name="title" placeholder="e.g., Winner of Hackathon 2025" required />
+                    <label for="achievementTitle">Achievement Title</label>
+                    <input type="text" id="achievementTitle" required placeholder="e.g., Programming Excellence">
                 </div>
-
                 <div class="form-group">
-                    <label for="description">Description</label>
-                    <textarea id="description" name="description" placeholder="Describe your achievement..." rows="4" required></textarea>
+                    <label for="achievementDescription">Description</label>
+                    <textarea id="achievementDescription" required placeholder="Describe your achievement..."></textarea>
                 </div>
-
                 <div class="form-group">
-                    <label for="type">Achievement Type</label>
-                    <select id="type" name="type" required>
-                        <option value="">Select Type</option>
-                        <option value="event">Event</option>
-                        <option value="award">Award</option>
-                        <option value="recognition">Recognition</option>
-                        <option value="participation">Participation</option>
-                        <option value="competition">Competition</option>
+                    <label for="achievementDate">Date Achieved</label>
+                    <input type="date" id="achievementDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="achievementCategory">Category</label>
+                    <select id="achievementCategory" required>
+                        <option value="">Select Category</option>
+                        <option value="academic">Academic</option>
+                        <option value="sports">Sports</option>
+                        <option value="cultural">Cultural</option>
+                        <option value="technical">Technical</option>
+                        <option value="other">Other</option>
                     </select>
                 </div>
-
-                <div class="form-group">
-                    <label for="level">Level</label>
-                    <select id="level" name="level" required>
-                        <option value="">Select Level</option>
-                        <option value="college">College</option>
-                        <option value="state">State</option>
-                        <option value="national">National</option>
-                        <option value="international">International</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="position">Position/Role</label>
-                    <select id="position" name="position" required>
-                        <option value="participant">Participant</option>
-                        <option value="winner">Winner</option>
-                        <option value="runner-up">Runner-up</option>
-                        <option value="organizer">Organizer</option>
-                        <option value="speaker">Speaker</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="organizer">Organizer/Event Name</label>
-                    <input type="text" id="organizer" name="organizer" placeholder="e.g., ACM, IEEE, College Administration" required />
-                </div>
-
-                <div class="form-group">
-                    <label for="date">Date of Achievement</label>
-                    <input type="date" id="date" name="date" required />
-                </div>
-
-                <div class="form-group">
-                    <label for="proof">Upload Proof/Certificate</label>
-                    <input type="file" id="proof" name="proof" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
-                    <small>Accepted formats: PDF, JPG, PNG, DOC (Max 5MB)</small>
-                </div>
-
-                <button type="submit" class="btn btn-primary">Submit Achievement</button>
+                <button type="submit" class="btn btn-primary btn-block">Submit Request</button>
             </form>
         </div>
-
-        <!-- My Achievements Section -->
-        <div id="achievementsSection" class="section">
-            <h2>🏆 My Achievements</h2>
-            <div id="achievementsList">
-                <p>Loading your achievements...</p>
-            </div>
-        </div>
-
-        <div id="message" class="message"></div>
     </div>
-
-    <script src="js/main.js"></script>
+    
+    <script src="script.js"></script>
     <script>
-        window.addEventListener('load', () => {
-            checkAuth('student');
-            const user = getUser();
-            document.getElementById('userGreeting').textContent = `Welcome, ${user.fullName}!`;
-            loadMyAchievements();
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuth();
+            document.getElementById('userName').textContent = 'Welcome, ' + (localStorage.getItem('userName') || 'Student');
+            loadAchievements();
+            loadProfile();
+            loadRequests();
+            setupMenuItems();
+            setupRequestForm();
         });
-
-        async function handleAddAchievement(event) {
-            event.preventDefault();
-
-            const formData = new FormData();
-            formData.append('title', document.getElementById('title').value);
-            formData.append('description', document.getElementById('description').value);
-            formData.append('type', document.getElementById('type').value);
-            formData.append('level', document.getElementById('level').value);
-            formData.append('position', document.getElementById('position').value);
-            formData.append('organizer', document.getElementById('organizer').value);
-            formData.append('date', document.getElementById('date').value);
-
-            const proofFile = document.getElementById('proof').files[0];
-            if (proofFile) {
-                formData.append('proof', proofFile);
+        
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            const role = localStorage.getItem('role');
+            if (!token || role !== 'student') {
+                window.location.href = 'index.html';
             }
-
-            await submitAchievement(formData);
         }
-    </script>
-</body>
-</html>
+        
+        async function loadAchievements() {
+            const token = localStorage.getItem('token');
+            try {
+                const response = await fetch('http://localhost:5000/api/achievements', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (!response.ok) throw new Error('Failed to load');
+                const achievements = await response.json();
+                
+                const list = document.getElementById('achievementsList');
+                if (achievements.length === 0) {
+                    list.innerHTML = '<div class="empty-state"><p>No achievements yet. Keep working on your goals!</p></div>';
+                } else {
+                    list.innerHTML = achievements.map(a => `
+                        <div class="achievement-card">
+                            <div class="card-header">
+                                <h3>${a.title}</h3>
+                                <span class="status ${a.status}">${a.status}</span>
+                            </div>
+                            <p class="card-description">${a.description}</p>
+                            <div class="card-footer">
+                                <small>📅 ${new Date(a.date).toLocaleDateString()}</small>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                document.getElementById('achievementsList').innerHTML = '<p class="error">Error loading achievements</p>';
+            }
+        }
+        
+        async function loadProfile() {
+            const token = localStorage.getItem('token');
+            try {
+                const response = await fetch('http://localhost:5000/api/auth/profile', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (!response.ok) throw new Error('Failed to load');
+                const profile = await response.json();
+                
+                document.getElementById('profileCard').innerHTML = `
+                    <div class="profile-info">
+                        <div class="profile-item">
+                            <label>Name</label>
+                            <p>${profile.name}</p>
+                        </div>

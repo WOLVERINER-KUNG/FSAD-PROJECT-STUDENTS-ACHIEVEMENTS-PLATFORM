@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Student Achievements</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="dashboard-wrapper">
+        <!-- Header -->
+        <header class="dashboard-header">
+            <div class="header-content">
+                <div class="logo-text">
+                    <h1>🎓 Admin Dashboard</h1>
+                </div>
+                <div class="header-right">
+                    <span class="user-welcome">Welcome, <strong id="userName">Admin</strong>!</span>
+                    <button class="btn btn-danger" onclick="logout()">Logout</button>
+                </div>
+            </div>
+        </header>
+        
+        <div class="dashboard-container">
+            <!-- Sidebar Navigation -->
+            <aside class="sidebar">
+                <nav class="sidebar-nav">
+                    <a href="#" class="nav-item active" data-section="achievements">
+                        <span class="icon">⭐</span>
+                        <span>Achievement Requests</span>
+                    </a>
+                    <a href="#" class="nav-item" data-section="students">
+                        <span class="icon">👥</span>
+                        <span>All Students</span>
+                    </a>
+                    <a href="#" class="nav-item" data-section="reports">
+                        <span class="icon">📊</span>
+                        <span>Reports</span>
+                    </a>
+                </nav>
+            </aside>
+            
+            <!-- Main Content -->
+            <main class="main-content">
+                <!-- Achievement Requests Section -->
+                <section id="achievements-section" class="content-section active">
+                    <div class="section-header">
+                        <h2>Achievement Approval Requests</h2>
+                        <div class="filter-controls">
+                            <select id="statusFilter" class="filter-select">
+                                <option value="">All Statuses</option>
+                                <option value="pending">Pending</option>
+                                <option value="approved">Approved</option>
+                                <option value="rejected">Rejected</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="achievementsList" class="achievements-list">
+                        <div class="loading-spinner">Loading achievement requests...</div>
+                    </div>
+                </section>
+                
+                <!-- Students Section -->
+                <section id="students-section" class="content-section">
+                    <div class="section-header">
+                        <h2>Student Management</h2>
+                        <div class="search-bar">
+                            <input type="text" id="studentSearch" placeholder="Search students by name or enrollment...">
+                        </div>
+                    </div>
+                    <div id="studentsList" class="students-list">
+                        <div class="loading-spinner">Loading students...</div>
+                    </div>
+                </section>
+                
+                <!-- Reports Section -->
+                <section id="reports-section" class="content-section">
+                    <h2>Reports & Statistics</h2>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalStudents">0</div>
+                            <div class="stat-label">Total Students</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalAchievements">0</div>
+                            <div class="stat-label">Total Achievements</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="pendingRequests">0</div>
+                            <div class="stat-label">Pending Requests</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="approvedCount">0</div>
+                            <div class="stat-label">Approved</div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+    
+    <!-- Modal for Achievement Details -->
+    <div id="achievementModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeAchievementModal()">&times;</span>
+            <h2>Achievement Details</h2>
+            <div id="achievementDetails" class="achievement-details">
+                <!-- Details will be loaded here -->
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-success" id="approveBtn" onclick="approveAchievement()">Approve</button>
+                <button class="btn btn-danger" id="rejectBtn" onclick="rejectAchievement()">Reject</button>
+                <button class="btn btn-secondary" onclick="closeAchievementModal()">Close</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+    <script>
+        let currentAchievementId = null;
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuth();
+            document.getElementById('userName').textContent = localStorage.getItem('userName') || 'Admin';
+            loadAchievements();
+            loadStudents();
+            loadReports();
+            setupNavigation();
+            setupFilters();
+        });
+        
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            const role = localStorage.getItem('role');
+            if (!token || role !== 'admin') {
+                window.location.href = 'index.html';
+            }
+        }
+        
+        async function loadAchievements() {
+            const token = localStorage.getItem('token');
+            try {
+                const response = await fetch('http://localhost:5000/api/admin/achievements', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (!response.ok) throw new Error('Failed to load');
+                const achievements = await response.json();
+                
+                displayAchievements(achievements);
+            } catch (error) {
+                document.getElementById('achievementsList').innerHTML = '<p class="error">Error loading achievements</p>';
+            }
+        }
+        
+        function displayAchievements(achievements) {
+            const list = document.getElementById('achievementsList');
+            
+            if (achievements.length === 0) {
+                list.innerHTML = '<p class="empty-state">No achievement requests</p>';
+                return;
+            }
+            
+            list.innerHTML = achievements.map(a => `
+                <div class="achievement-item">
+                    <div class="achievement-info">
+                        <h3>${a.title}</h3>
+                        <p><strong>Student:</strong> ${a.studentName}</p>
+                        <p><strong>Description:</strong> ${a.description}</p>
+                        <p><strong>Date:</strong> ${new Date(a.date).toLocaleDateString()}</p>
+                    </div>
+                    <div class="achievement-status">
+                        <span class="status ${a.status}">${a.status.toUpperCase()}</span>
+                        ${a.status === 'pending' ? `<button class="btn btn-small" onclick="viewAchievementDetails(${a.id})">Review</button>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        async function loadStudents() {
+            const token = localStorage.getItem('token');
+            try {
+                const response = await fetch('http://localhost:5000/api/admin/students', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (!response.ok) throw new Error('Failed to load');
+                const students = await response.json();
+                
+                displayStudents(students);
+            } catch (error) {
+                document.getElementById('studentsList').innerHTML = '<p class="error">Error loading students</p>';
+            }
+        }
+        
+        function displayStudents(students) {
+            const list = document.getElementById('studentsList');
+            
+            if (students.length === 0) {
+                list.innerHTML = '<p class="empty-state">No students registered</p>';
+                return;
+            }
+            
+            list.innerHTML = students.map(s => `
+                <div class="student-item">
+                    <div class="student-info">
+                        <h3>${s.fullName}</h3>
+                        <p><strong>Enrollment:</strong> ${s.enrollmentNumber}</p>
+                        <p><strong>Email:</strong> ${s.email}</p>
+                        <p><strong>Achievements:</strong> ${s.achievementCount || 0}</p>
+                    </div>
+                    <div class="student-actions">
+                        <button class="btn btn-small btn-danger" onclick="removeStudent(${s.id})">Remove</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        async function loadReports() {
+            const token = localStorage.getItem('token');
+            try {
+                const response = await fetch('http://localhost:5000/api/admin/reports', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('totalStudents').textContent = data.totalStudents || 0;
+                    document.getElementById('totalAchievements').textContent = data.totalAchievements || 0;
+                    document.getElementById('pendingRequests').textContent = data.pendingRequests || 0;
+                    document.getElementById('approvedCount').textContent = data.approvedCount || 0;
+                }
+            } catch (error) {
+                console.error('Error loading reports:', error);
+            }
+        }
+        
+        function setupNavigation() {
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const section = item.dataset.section;
+                    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                    item.classList.add('active');
+                    document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+                    document.getElementById(section + '-section').classList.add('active');
+                });
+            });
+        }
+        
+        function setupFilters() {
+            document.getElementById('statusFilter').addEventListener('change', (e) => {
+                // Filter achievements based on status
+                const items = document.querySelectorAll('.achievement-item');
+                items.forEach(item => {
+                    if (e.target.value === '' || item.querySelector('.status').textContent.toLowerCase() === e.target.value.toUpperCase()) {
+                        item.style.display = 'block';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+            
+            document.getElementById('studentSearch').addEventListener('keyup', (e) => {
+                const search = e.target.value.toLowerCase();
+                const items = document.querySelectorAll('.student-item');
+                items.forEach(item => {
+                    const text = item.textContent.toLowerCase();
+                    item.style.display = text.includes(search) ? 'block' : 'none';
+                });
+            });
+        }
+        
+        function viewAchievementDetails(id) {
+            currentAchievementId = id;
+            document.getElementById('achievementModal').style.display = 'block';
+            // Load and display achievement details
+        }
+        
+        function closeAchievementModal() {
+            document.getElementById('achievementModal').style.display = 'none';
+            currentAchievementId = null;
+        }
+        
+        async function approveAchievement() {
+            if (!currentAchievementId) return;
+            
+            const token = localStorage.getItem('token');
+            try {
+                const response = await fetch(`http://localhost:5000/api/admin/achievements/${currentAchievementId}/approve`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (response.ok) {
+                    closeAchievementModal();
+                    loadAchievements();
+                    loadReports();
+                }
+            } catch (error) {
+                console.error('Error approving achievement:', error);
+            }
+        }
+        
+        async function rejectAchievement() {
+            if (!currentAchievementId) return;
+            
+            const token = localStorage.getItem('token');
+            try {
+                const response = await fetch(`http://localhost:5000/api/admin/achievements/${currentAchievementId}/reject`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (response.ok) {
+                    closeAchievementModal();
+                    loadAchievements();
+                    loadReports();
+                }
+            } catch (error) {
+                console.error('Error rejecting achievement:', error);
+            }
+        }
+        
+        async function removeStudent(id) {
+            if (confirm('Are you sure you want to remove this student?')) {
+                const token = localStorage.getItem('token');
+                try {
+                    const response = await fetch(`http://localhost:5000/api/admin/students/${id}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    
+                    if (response.ok) {
+                        loadStudents();
+                    }
+                } catch (error) {
+                    console.error('Error removing student:', error);
+                }
+            }
+        }
+        
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>

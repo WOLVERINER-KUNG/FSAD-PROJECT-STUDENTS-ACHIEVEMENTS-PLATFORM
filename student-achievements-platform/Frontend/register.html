@@ -1,5 +1,95 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Achievements Platform - Register</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container register-container">
+        <div class="register-box">
+            <div class="logo">🎓</div>
+            <h1>Create Your Account</h1>
+            <p class="subtitle">Join the Student Achievements Platform</p>
+            
+            <form id="registerForm" class="form">
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" name="name" required placeholder="Enter your full name">
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" required placeholder="Enter your email">
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required placeholder="Enter a strong password" minlength="6">
+                </div>
+                
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm Password</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" required placeholder="Confirm your password">
+                </div>
+                
+                <div class="form-group">
+                    <label for="enrollmentNumber">Enrollment Number</label>
+                    <input type="text" id="enrollmentNumber" name="enrollmentNumber" required placeholder="Enter your enrollment number">
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-block">Register</button>
+            </form>
+            
+            <div class="auth-links">
+                <p>Already have an account? <a href="index.html">Login here</a></p>
+            </div>
+            
+            <div id="message" class="message"></div>
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const enrollmentNumber = document.getElementById('enrollmentNumber').value;
+            
+            if (password !== confirmPassword) {
+                showMessage('Passwords do not match!', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:5000/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, password, enrollmentNumber })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showMessage('Registration successful! Redirecting to login...', 'success');
+                    setTimeout(() => window.location.href = 'index.html', 2000);
+                } else {
+                    showMessage(data.message || 'Registration failed', 'error');
+                }
+            } catch (error) {
+                showMessage('Connection error. Make sure backend is running.', 'error');
+            }
+        });
+        
+        function showMessage(msg, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = msg;
+            messageDiv.className = 'message ' + type;
+            messageDiv.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
